@@ -23,7 +23,7 @@ erl_crash.dump
 solr_cli-*.tar
 
 # Ignore escript binary (built via "mix escript.build").
-solr_cli
+/solr_cli
 
 # Temporary files, for example, from tests.
 /tmp/
