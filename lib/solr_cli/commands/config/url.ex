@@ -14,6 +14,11 @@ defmodule SolrCli.Commands.Config.Url do
     upsert_url("url", %{}, label, url)
   end
 
+  def run(%{action: "set"}, _, context) do
+    IO.puts("Please, inform the label and url options!")
+    help(context)
+  end
+
   def run(%{action: "list"}, _, %{config: %{"url" => urls}}) do
     urls
     |> Map.to_list()

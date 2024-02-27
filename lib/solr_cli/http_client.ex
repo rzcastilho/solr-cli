@@ -20,7 +20,7 @@ defmodule SolrCli.HttpClient do
     Tesla.client(middleware)
   end
 
-  def count(client, collection, query) do
+  def count(client, collection, query \\ "*:*") do
     Tesla.get(client, "#{collection}/select?q=#{query}&rows=0")
   end
 

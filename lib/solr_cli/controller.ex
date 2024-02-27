@@ -66,6 +66,46 @@ defmodule SolrCli.Controller do
     end
   end
 
+  def cluster_status(client) do
+    case Tesla.get(client, "/admin/collections?action=CLUSTERSTATUS") do
+      {:ok, %{body: %{"cluster" => %{"collections" => collections, "aliases" => aliases}}}} ->
+        {
+          collections
+          |> Enum.to_list()
+          |> Enum.map(&collection_mapper/1),
+          aliases
+          |> Enum.to_list()
+          |> Enum.map(&alias_mapper/1)
+        }
+    end
+  end
+
+  def collections(client) do
+    case Tesla.get(client, "/admin/collections?action=LIST") do
+      {:ok, %{body: %{"collections" => collections}}} ->
+        collections
+    end
+  end
+
+  def aliases(client) do
+    case Tesla.get(client, "/admin/collections?action=LISTALIASES") do
+      {:ok, %{body: %{"aliases" => aliases}}} ->
+        Map.keys(aliases)
+    end
+  end
+
+  def request(client, uri) do
+    IO.write("  -> #{uri}...")
+    case Tesla.get(client, uri) do
+      {:ok, %{status: status}} when status in 200..299 ->
+        IO.puts(" SUCCESS!!!")
+        :success
+      _ ->
+        IO.puts(" ERROR!!!")
+        :error
+    end
+  end
+
   def apply_mapper(doc, mapper) when is_list(mapper) do
     mapper
     |> Enum.reduce(doc, &mapper_reducer/2)
@@ -116,6 +156,18 @@ defmodule SolrCli.Controller do
 
   def remove_reducer(field, acc) do
     Map.delete(acc, field)
+  end
+
+  def collection_mapper({name, %{"configName" => config_name, "shards" => shards, "replicationFactor" => replication_factor, "router" => %{"name" => router_name, "field" => router_field}}}) do
+    %{name: name, config_name: config_name, num_shards: Enum.count(shards), replication_factor: replication_factor, router_name: router_name, router_field: router_field}
+  end
+
+  def collection_mapper({name, %{"configName" => config_name, "shards" => shards, "replicationFactor" => replication_factor, "router" => %{"name" => router_name}}}) do
+    %{name: name, config_name: config_name, num_shards: Enum.count(shards), replication_factor: replication_factor, router_name: router_name}
+  end
+
+  def alias_mapper({name, collection}) do
+    %{name: name, collection: collection}
   end
 
 end

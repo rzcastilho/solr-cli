@@ -4,4 +4,5 @@ defmodule SolrCli do
 
   command(SolrCli.Commands.Config)
   command(SolrCli.Commands.Copy)
+  command(SolrCli.Commands.Create)
 end

@@ -13,16 +13,41 @@ defmodule SolrCli.Commands.Copy do
   option(:query, :string, "Solr query", default: "*:*")
   option(:max, :integer, "Max number of documents to copy", default: 10_000)
   option(:page_size, :integer, "Fetch page size from Solr", default: 100)
-  option(:mapper, :string, "Map transformations: \"copy:from:to\" \"rename:from:to\" \"delete:attribute\"", alias: :m, keep: true)
+
+  option(
+    :mapper,
+    :string,
+    "Map transformations: \"copy:from:to\" \"rename:from:to\" \"delete:attribute\" \"copy:from:to:template\" \"rename:from:to:template\"",
+    alias: :m,
+    keep: true
+  )
 
   def run(
-    %{source_solr: s_solr, source_collection: s_col, target_solr: t_solr, target_collection: t_col},
-    %{query: query, max: max, page_size: page_size} = options,
-    %{config: %{"url" => urls} = config}) do
-    IO.puts("Copying #{max} maximum of documents from #{urls[s_solr]}/#{s_col} to #{urls[t_solr]}/#{t_col} with query #{query}...")
+        %{
+          source_solr: s_solr,
+          source_collection: s_col,
+          target_solr: t_solr,
+          target_collection: t_col
+        },
+        %{query: query, max: max, page_size: page_size} = options,
+        %{config: %{"url" => urls} = config}
+      ) do
+    start = DateTime.utc_now()
+    IO.puts(
+      "#{DateTime.to_iso8601(start)} - Copying #{max} maximum of documents from #{urls[s_solr]}/#{s_col} to #{urls[t_solr]}/#{t_col} with query #{query}..."
+    )
+
     source_cli = HttpClient.new(base_url: urls[s_solr])
     target_cli = HttpClient.new(base_url: urls[t_solr])
-    source_search = %Controller.Search{client: source_cli, collection: s_col, query: %{"q" => query}, max: max, rows: page_size}
+
+    source_search = %Controller.Search{
+      client: source_cli,
+      collection: s_col,
+      query: %{"q" => query},
+      max: max,
+      rows: page_size
+    }
+
     Controller.reindex_documents(
       source_search,
       target_cli,
@@ -32,7 +57,8 @@ defmodule SolrCli.Commands.Copy do
         Map.get(config, "template", %{})
       )
     )
-    IO.puts("\nDone!")
+    finish = DateTime.utc_now()
+    IO.puts("\n#{DateTime.to_iso8601(finish)} - Done! (#{DateTime.diff(finish, start)}s)")
   end
 
   defp normalize_mappers([], _templates), do: []
@@ -51,8 +77,10 @@ defmodule SolrCli.Commands.Copy do
     case String.split(rest, ":") do
       [from, to] ->
         {:copy, from, to}
+
       [from, to, template] ->
         {:copy, from, to, template}
+
       _ ->
         raise "Invalid format for copy action \"#{action}\""
     end
@@ -62,8 +90,10 @@ defmodule SolrCli.Commands.Copy do
     case String.split(rest, ":") do
       [from, to] ->
         {:rename, from, to}
+
       [from, to, template] ->
         {:rename, from, to, template}
+
       _ ->
         raise "Invalid format for rename action \"#{action}\""
     end
@@ -73,7 +103,7 @@ defmodule SolrCli.Commands.Copy do
     {:delete, attribute}
   end
 
-  defp map_action(action), do: raise "Invalid action format \"#{action}\""
+  defp map_action(action), do: raise("Invalid action format \"#{action}\"")
 
   defp map_template({_action, _from, _to, template} = action, templates) do
     action
@@ -82,5 +112,4 @@ defmodule SolrCli.Commands.Copy do
   end
 
   defp map_template(action, _templates), do: action
-
 end

@@ -14,6 +14,11 @@ defmodule SolrCli.Commands.Config.Template do
     upsert_template("template", %{}, label, template)
   end
 
+  def run(%{action: "set"}, _, context) do
+    IO.puts("Please, inform the label and template options!")
+    help(context)
+  end
+
   def run(%{action: "list"}, _, %{config: %{"template" => templates}}) do
     templates
     |> Map.to_list()
