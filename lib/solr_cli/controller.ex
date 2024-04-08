@@ -1,6 +1,8 @@
 defmodule SolrCli.Controller do
   @moduledoc false
 
+  import SolrCli.Helpers
+
   defmodule Search do
     defstruct [
       :client,
@@ -94,14 +96,24 @@ defmodule SolrCli.Controller do
     end
   end
 
+  def request_status(client, request_id) do
+    case Tesla.get(client, "/admin/collections?action=REQUESTSTATUS&requestid=#{request_id}") do
+      {:ok, %{body: %{"exception" => %{"msg" => detail}, "status" => %{"state" => "failed", "msg" => message}}}} ->
+        puts("FAILED", "#{message} [#{detail}]")
+      {:ok, %{body: %{"status" => %{"state" => state, "msg" => message}}}} ->
+        puts(String.upcase(state), message)
+      _ ->
+        puts("UNKNOWN", request_id)
+    end
+  end
+
   def request(client, uri) do
-    IO.write("  -> #{uri}...")
     case Tesla.get(client, uri) do
       {:ok, %{status: status}} when status in 200..299 ->
-        IO.puts(" SUCCESS!!!")
+        puts("SUCCESS", uri)
         :success
       _ ->
-        IO.puts(" ERROR!!!")
+        puts("ERROR", uri)
         :error
     end
   end

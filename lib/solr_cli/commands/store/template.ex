@@ -1,4 +1,4 @@
-defmodule SolrCli.Commands.Config.Template do
+defmodule SolrCli.Commands.Store.Template do
   use DoIt.Command,
     description: "Manage templates"
 

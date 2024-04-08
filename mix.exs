@@ -8,14 +8,15 @@ defmodule SolrCli.MixProject do
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      escript: [main_module: SolrCli]
+      releases: releases()
     ]
   end
 
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger],
+      mod: {SolrCli, []}
     ]
   end
 
@@ -25,7 +26,23 @@ defmodule SolrCli.MixProject do
       {:do_it, "~> 0.6"},
       {:tesla, "~> 1.7"},
       {:plug, "~> 1.14"},
-      {:geo, "~> 3.5"}
+      {:geo, "~> 3.5"},
+      {:burrito, "~> 1.0"}
+    ]
+  end
+
+  def releases do
+    [
+      solr_cli: [
+        steps: [:assemble, &Burrito.wrap/1],
+        burrito: [
+          targets: [
+            macos: [os: :darwin, cpu: :x86_64],
+            linux: [os: :linux, cpu: :x86_64],
+            windows: [os: :windows, cpu: :x86_64]
+          ]
+        ]
+      ]
     ]
   end
 end

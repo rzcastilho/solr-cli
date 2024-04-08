@@ -1,6 +1,6 @@
-defmodule SolrCli.Commands.Create do
+defmodule SolrCli.Commands.Config.Create do
   use DoIt.Command,
-    description: "Create collections from a Solr to another"
+    description: "Create collections and aliases in Solr Target based on an existing Solr Source"
 
   alias SolrCli.HttpClient
   alias SolrCli.Controller
@@ -8,22 +8,14 @@ defmodule SolrCli.Commands.Create do
   argument(:source_solr, :string, "Source Solr")
   argument(:target_solr, :string, "Target Solr")
 
-  def run(
-        %{
-          source_solr: s_solr,
-          target_solr: t_solr,
-        },
-        _options,
-        %{config: %{"url" => urls}}
-      ) do
-    start = DateTime.utc_now()
+  option(:resource, :string, "Resources to create", allowed_values: ["all", "collections", "aliases"], default: "all")
+
+  def run(%{source_solr: s_solr, target_solr: t_solr }, _options, %{config: %{"url" => urls}}) do
     source_cli = HttpClient.new(base_url: urls[s_solr])
     target_cli = HttpClient.new(base_url: urls[t_solr])
 
-    IO.puts("#{DateTime.to_iso8601(DateTime.utc_now())} - Fetching configuration from source #{urls[s_solr]}...")
     {collections_config, aliases_config} = Controller.cluster_status(source_cli)
 
-    IO.puts("#{DateTime.to_iso8601(DateTime.utc_now())} - Fetching configuration from target #{urls[t_solr]}...")
     collections_target = Controller.collections(target_cli)
     aliases_target = Controller.aliases(target_cli)
     
@@ -32,7 +24,6 @@ defmodule SolrCli.Commands.Create do
       |> Enum.filter(fn %{name: name} -> !Enum.any?(collections_target, & &1 == name) end)
       |> Enum.map(&build_uri/1)
 
-    IO.puts("\n#{DateTime.to_iso8601(DateTime.utc_now())} - Creating #{Enum.count(collections)} collections...")
     collections
     |> Enum.each(&Controller.request(target_cli, &1))
 
@@ -41,12 +32,8 @@ defmodule SolrCli.Commands.Create do
       |> Enum.filter(fn %{name: name} -> !Enum.any?(aliases_target, & &1 == name) end)
       |> Enum.map(&build_uri/1)
 
-    IO.puts("\n#{DateTime.to_iso8601(DateTime.utc_now())} - Creating #{Enum.count(aliases)} aliases...")
     aliases
     |> Enum.each(&Controller.request(target_cli, &1))
-    
-    finish = DateTime.utc_now()
-    IO.puts("\n#{DateTime.to_iso8601(finish)} - Done! (#{DateTime.diff(finish, start)}s)")
   end
 
   defp build_uri(%{name: name, collection: collection}) do

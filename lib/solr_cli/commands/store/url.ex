@@ -1,4 +1,4 @@
-defmodule SolrCli.Commands.Config.Url do
+defmodule SolrCli.Commands.Store.Url do
   use DoIt.Command,
     description: "Manage Solr Base URL's"
 

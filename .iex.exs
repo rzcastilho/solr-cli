@@ -1,4 +1,4 @@
 alias SolrCli.{
   Controller,
-    HttpClient
+  HttpClient
 }

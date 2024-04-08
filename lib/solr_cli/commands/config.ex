@@ -1,8 +1,8 @@
 defmodule SolrCli.Commands.Config do
   use DoIt.Command,
-    description: "Solr CLI Configuration"
+    description: "Solr Collections Configuration"
 
-  subcommand(SolrCli.Commands.Config.Url)
-  subcommand(SolrCli.Commands.Config.Template)
+  subcommand(SolrCli.Commands.Config.Create)
+  subcommand(SolrCli.Commands.Config.Delete)
 
 end

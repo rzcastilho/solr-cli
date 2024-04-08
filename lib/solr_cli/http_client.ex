@@ -7,8 +7,8 @@ defmodule SolrCli.HttpClient do
       Tesla.Middleware.Retry,
       [
         delay: 500,
-        max_retries: 10,
-        max_delay: 4_000
+        max_retries: 3,
+        max_delay: 5_000
       ]
     }
   ]
