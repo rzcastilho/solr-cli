@@ -3,6 +3,7 @@ defmodule SolrCli.HttpClient do
 
   @middleware [
     Tesla.Middleware.JSON,
+    {Tesla.Middleware.Headers, [{"content-type", "application/json"}]},
     {
       Tesla.Middleware.Retry,
       [
@@ -14,9 +15,11 @@ defmodule SolrCli.HttpClient do
   ]
 
   def new(opts) do
-    middleware = [
-      {Tesla.Middleware.BaseUrl, opts[:base_url]}
-    ] ++ @middleware
+    middleware =
+      [
+        {Tesla.Middleware.BaseUrl, opts[:base_url]}
+      ] ++ @middleware
+
     Tesla.client(middleware)
   end
 
@@ -24,4 +27,7 @@ defmodule SolrCli.HttpClient do
     Tesla.get(client, "#{collection}/select?q=#{query}&rows=0")
   end
 
+  def update(client, collection, request) do
+    Tesla.post(client, "#{collection}/update", request)
+  end
 end

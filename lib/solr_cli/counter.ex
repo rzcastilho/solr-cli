@@ -2,7 +2,7 @@ defmodule SolrCli.Counter do
   use GenServer
 
   defmodule State do
-    defstruct [:total, count:  0]
+    defstruct [:total, count: 0]
   end
 
   def start_link(total) do

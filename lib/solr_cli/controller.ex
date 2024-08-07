@@ -23,28 +23,40 @@ defmodule SolrCli.Controller do
     _text_
     _root_
     _nest_path_
-  )
+   )
 
-  def fetch_documents(%Search{client: client, collection: collection, query: query, max: max, rows: rows}) do
+  def fetch_documents(%Search{
+        client: client,
+        collection: collection,
+        query: query,
+        max: max,
+        rows: rows
+      }) do
     case Tesla.get(client, "#{collection}/select?#{Query.encode(query)}&rows=0") do
       {:ok, %Tesla.Env{status: 200, body: %{"response" => %{"numFound" => total}}}} ->
-        take = cond do
-          total > max -> max
-          true -> total
-        end
+        take =
+          cond do
+            total > max -> max
+            true -> total
+          end
+
         {:ok, counter} = Counter.start_link(take)
+
         0..take//String.to_integer("#{rows}")
         |> Task.async_stream(
-          &Tesla.get(client, "#{collection}/select?#{Query.encode(query)}&start=#{&1}&rows=#{rows}&sort=idKey+asc"),
-        timeout: 60_000
+          &Tesla.get(
+            client,
+            "#{collection}/select?#{Query.encode(query)}&start=#{&1}&rows=#{rows}&sort=idKey+asc"
+          ),
+          timeout: 60_000
         )
         |> Stream.flat_map(fn {:ok,
-                              {:ok,
+                               {:ok,
                                 %Tesla.Env{status: 200, body: %{"response" => %{"docs" => docs}}}}} ->
-            Counter.inc(counter, length(docs))
-            {c, t} = Counter.info(counter)
-            IO.write("\r * #{c}/#{t}")
-            docs
+          Counter.inc(counter, length(docs))
+          {c, t} = Counter.info(counter)
+          IO.write("\r * #{c}/#{t}")
+          docs
         end)
         |> Stream.take(take)
     end
@@ -56,7 +68,10 @@ defmodule SolrCli.Controller do
     |> Stream.map(&apply_mapper(&1, mapper))
     |> Stream.map(&remove_fields/1)
     |> Stream.chunk_every(100)
-    |> Task.async_stream(&Tesla.post(client_target, "#{collection_target}/update/json/docs", &1), timeout: :infinity, max_concurrency: 8)
+    |> Task.async_stream(&Tesla.post(client_target, "#{collection_target}/update/json/docs", &1),
+      timeout: :infinity,
+      max_concurrency: 8
+    )
     |> Stream.run()
   end
 
@@ -98,10 +113,18 @@ defmodule SolrCli.Controller do
 
   def request_status(client, request_id) do
     case Tesla.get(client, "/admin/collections?action=REQUESTSTATUS&requestid=#{request_id}") do
-      {:ok, %{body: %{"exception" => %{"msg" => detail}, "status" => %{"state" => "failed", "msg" => message}}}} ->
+      {:ok,
+       %{
+         body: %{
+           "exception" => %{"msg" => detail},
+           "status" => %{"state" => "failed", "msg" => message}
+         }
+       }} ->
         puts("FAILED", "#{message} [#{detail}]")
+
       {:ok, %{body: %{"status" => %{"state" => state, "msg" => message}}}} ->
         puts(String.upcase(state), message)
+
       _ ->
         puts("UNKNOWN", request_id)
     end
@@ -112,6 +135,7 @@ defmodule SolrCli.Controller do
       {:ok, %{status: status}} when status in 200..299 ->
         puts("SUCCESS", uri)
         :success
+
       _ ->
         puts("ERROR", uri)
         :error
@@ -143,7 +167,9 @@ defmodule SolrCli.Controller do
 
   def mapper_reducer({:rename, from, to}, doc) do
     case doc[from] do
-      nil -> doc
+      nil ->
+        doc
+
       value ->
         doc
         |> Map.put(to, value)
@@ -153,7 +179,9 @@ defmodule SolrCli.Controller do
 
   def mapper_reducer({:rename, from, to, template}, doc) do
     case doc[from] do
-      nil -> doc
+      nil ->
+        doc
+
       value ->
         doc
         |> Map.put(to, EEx.eval_string(template, assigns: [input: value]))
@@ -170,16 +198,81 @@ defmodule SolrCli.Controller do
     Map.delete(acc, field)
   end
 
-  def collection_mapper({name, %{"configName" => config_name, "shards" => shards, "replicationFactor" => replication_factor, "router" => %{"name" => router_name, "field" => router_field}}}) do
-    %{name: name, config_name: config_name, num_shards: Enum.count(shards), replication_factor: replication_factor, router_name: router_name, router_field: router_field}
+  def collection_mapper(
+        {name,
+         %{
+           "configName" => config_name,
+           "shards" => shards,
+           "replicationFactor" => replication_factor,
+           "router" => %{"name" => router_name, "field" => router_field}
+         }}
+      ) do
+    %{
+      name: name,
+      config_name: config_name,
+      shards: Enum.count(shards),
+      replication_factor: replication_factor,
+      router_name: router_name,
+      router_field: router_field
+    }
   end
 
-  def collection_mapper({name, %{"configName" => config_name, "shards" => shards, "replicationFactor" => replication_factor, "router" => %{"name" => router_name}}}) do
-    %{name: name, config_name: config_name, num_shards: Enum.count(shards), replication_factor: replication_factor, router_name: router_name}
+  def collection_mapper(
+        {name,
+         %{
+           "configName" => config_name,
+           "shards" => shards,
+           "replicationFactor" => replication_factor,
+           "router" => %{"name" => router_name}
+         }}
+      ) do
+    %{
+      name: name,
+      config_name: config_name,
+      shards:
+        shards
+        |> Map.to_list()
+        |> Enum.map(&shard_mapper/1),
+      replication_factor: replication_factor,
+      router_name: router_name
+    }
+  end
+
+  def shard_mapper({name, %{"state" => state, "health" => health, "replicas" => replicas}}) do
+    %{
+      name: name,
+      state: String.to_atom(state),
+      health: String.to_atom(health),
+      replicas:
+        replicas
+        |> Map.to_list()
+        |> Enum.map(&replica_mapper/1)
+    }
+  end
+
+  def replica_mapper(
+        {name,
+         %{
+           "base_url" => base_url,
+           "core" => core,
+           "force_set_state" => force_set_state,
+           "node_name" => node_name,
+           "state" => state,
+           "type" => type
+         }}
+      ) do
+    %{
+      name: name,
+      base_url: base_url,
+      core: core,
+      force_set_state: force_set_state,
+      node_name: node_name,
+      state: String.to_atom(state),
+      type: String.to_atom(type)
+    }
   end
 
   def alias_mapper({name, collection}) do
     %{name: name, collection: collection}
   end
-
 end

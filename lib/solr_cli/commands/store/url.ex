@@ -2,6 +2,8 @@ defmodule SolrCli.Commands.Store.Url do
   use DoIt.Command,
     description: "Manage Solr Base URL's"
 
+  alias TableRex.Table
+
   argument(:action, :string, "Operation", allowed_values: ["set", "list"])
   option(:label, :string, "Label", alias: :l)
   option(:url, :string, "Url", alias: :u)
@@ -20,9 +22,14 @@ defmodule SolrCli.Commands.Store.Url do
   end
 
   def run(%{action: "list"}, _, %{config: %{"url" => urls}}) do
-    urls
-    |> Map.to_list()
-    |> Enum.each(fn {label, url} -> IO.puts("#{label}\t#{url}") end)
+    rows =
+      urls
+      |> Map.to_list()
+      |> Enum.map(fn {label, url} -> [label, url] end)
+
+    Table.new(rows, ["Label", "URL"])
+    |> Table.render!()
+    |> IO.puts()
   end
 
   def run(%{action: "list"}, _, _) do
@@ -32,5 +39,4 @@ defmodule SolrCli.Commands.Store.Url do
   defp upsert_url(name, map, label, url) do
     DoIt.Commfig.set(name, Map.put(map, label, url))
   end
-
 end

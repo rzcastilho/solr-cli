@@ -4,5 +4,4 @@ defmodule SolrCli.Commands.Store do
 
   subcommand(SolrCli.Commands.Store.Url)
   subcommand(SolrCli.Commands.Store.Template)
-
 end

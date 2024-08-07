@@ -6,7 +6,9 @@ defmodule SolrCli.Commands.Store.Template do
   option(:label, :string, "Label", alias: :l)
   option(:template, :string, "Template", alias: :t)
 
-  def run(%{action: "set"}, %{label: label, template: template}, %{config: %{"template" => templates}}) do
+  def run(%{action: "set"}, %{label: label, template: template}, %{
+        config: %{"template" => templates}
+      }) do
     upsert_template("template", templates, label, template)
   end
 
@@ -32,5 +34,4 @@ defmodule SolrCli.Commands.Store.Template do
   defp upsert_template(name, map, label, template) do
     DoIt.Commfig.set(name, Map.put(map, label, template))
   end
-
 end

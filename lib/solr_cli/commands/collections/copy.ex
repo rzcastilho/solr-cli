@@ -1,4 +1,4 @@
-defmodule SolrCli.Commands.Copy do
+defmodule SolrCli.Commands.Collections.Copy do
   use DoIt.Command,
     description: "Copy a collection from a Solr to another"
 
@@ -33,6 +33,7 @@ defmodule SolrCli.Commands.Copy do
         %{config: %{"url" => urls} = config}
       ) do
     start = DateTime.utc_now()
+
     IO.puts(
       "#{DateTime.to_iso8601(start)} - Copying #{max} maximum of documents from #{urls[s_solr]}/#{s_col} to #{urls[t_solr]}/#{t_col} with query #{query}..."
     )
@@ -57,6 +58,7 @@ defmodule SolrCli.Commands.Copy do
         Map.get(config, "template", %{})
       )
     )
+
     finish = DateTime.utc_now()
     IO.puts("\n#{DateTime.to_iso8601(finish)} - Done! (#{DateTime.diff(finish, start)}s)")
   end

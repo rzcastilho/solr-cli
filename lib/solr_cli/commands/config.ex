@@ -4,5 +4,4 @@ defmodule SolrCli.Commands.Config do
 
   subcommand(SolrCli.Commands.Config.Create)
   subcommand(SolrCli.Commands.Config.Delete)
-
 end
