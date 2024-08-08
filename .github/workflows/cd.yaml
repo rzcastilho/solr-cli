@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build Binaries
         run: earthly +release
-      - name: Save Assets Cache
+      - name: Save Assets to Cache
         uses: actions/cache/save@v3
         with:
           path: ./assets
@@ -47,7 +47,7 @@ jobs:
         suffix: [linux, macos, windows.exe]
     needs: release
     steps:
-      - name: Restore Assets Cache
+      - name: Restore Assets from Cache
         uses: actions/cache/restore@v3
         with:
           path: ./assets
@@ -58,7 +58,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ needs.release.create_release.outputs.upload_url }}
           asset_path: ./assets/solr_cli_linux
           asset_name: solr-cli-${{ github.ref }}-${{ matrix.suffix }}
           asset_content_type: application/octet-stream
