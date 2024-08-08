@@ -46,3 +46,4 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./assets/solr_cli_linux
           asset_name: solr_cli_linux
+          asset_content_type: application/octet-stream
