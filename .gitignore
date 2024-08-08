@@ -30,3 +30,6 @@ solr_cli-*.tar
 
 # Burrito Releases
 /burrito_out/
+
+# Assets
+/assets/
