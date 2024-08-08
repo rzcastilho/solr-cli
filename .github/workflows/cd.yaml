@@ -62,5 +62,5 @@ jobs:
         with:
           upload_url: ${{ needs.release.outputs.upload_url }}
           asset_path: ./assets/solr_cli_linux
-          asset_name: solr-cli-${{ github.ref }}-${{ matrix.suffix }}
+          asset_name: solr-cli-${{ github.ref_name }}-${{ matrix.suffix }}
           asset_content_type: application/octet-stream
