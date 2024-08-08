@@ -22,4 +22,4 @@ Some features...
   - `template`  Manage templates
   - `url`       Manage Solr Base URL's
 
-This is a working in progress... use at your own risk.
+🚨 _This is a working in progress... use at your own risk._
