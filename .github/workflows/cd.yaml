@@ -23,7 +23,7 @@ jobs:
         uses: actions/cache/save@v3
         with:
           path: ./assets
-          key: ${{ runner.os }}-${{ github.ref }}-${{ github.job_id }}
+          key: ${{ runner.os }}-${{ github.ref }}-${{ github.job }}
   release:
     name: Release
     runs-on: ubuntu-latest
